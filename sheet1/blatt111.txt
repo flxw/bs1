@@ -1,0 +1,18 @@
+# Nenn und begründen Sie vier Ziele beim Entwurf eines Betriebssystem
+1. Maximierung der CPU-Auslastung
+2. Abarbeitung von mehreren Programmen
+3. 
+4
+
+# Nennen Sie Beispiele für Betriebssystemfunktionalität die im Kernel- bzw. im
+# User-Mode implementiert werden müssen!
+
+# Was sind Vor- und Nachteile der Trennung von Kernel- und Usermode?
+Geschwindigkeit ist ein Nachteil. Durch Systemaufrufe, die im Kernel
+stattfinden, muss in den Kernelmode umgeschaltet werden. Dieses Umschalten
+kann unter Umständen Zeit kosten.
+Sicherheit ist ein Vorteil, da nun Speicherbereiche des Betriebssystems
+geschützt sind, und gewisse Funktionen nicht ohne die Überprüfung des
+Betriebssystems ausgeführt werden können.
+
+# vim: tw=80
