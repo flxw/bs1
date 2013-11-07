@@ -1,8 +1,8 @@
-# Nenn und begründen Sie vier Ziele beim Entwurf eines Betriebssystem
+# Nennen und begründen Sie vier Ziele beim Entwurf eines Betriebssystem
 1. Maximierung der CPU-Auslastung
 2. Abarbeitung von mehreren Programmen
-3. 
-4
+3. Multiprogrammierung
+4. Time-Sharing
 
 # Nennen Sie Beispiele für Betriebssystemfunktionalität die im Kernel- bzw. im
 # User-Mode implementiert werden müssen!

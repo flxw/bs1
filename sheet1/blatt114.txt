@@ -1,0 +1,20 @@
+# Machen Sie sich mit Betriebssystemgeschichte vertraut!
+# Nennen Sie jeweils drei Merkmale (APIs, Kommandosprachen-Konstrukte,
+# Systemprogramme) die Windows/Linux aus Vorgängersystemen übernommen haben
+
+1. Kommando-Interpreter
+Umd das System interaktiv zu gestalten, wird dem Nutzer
+eine Konsole bereitgestellt, über die Programme ausgeführt werden können.
+Sowohl Windows (explorer.exe), als auch Linux implementieren dieses Prinzip.
+Bei Linux ist das Konzept der Login-Shell auf Textbasis etwas klassischer gehalten
+
+2. Prozesse
+Das Time-Sharing-Prinzip und Scheduling sind beides nicht neu,
+werden aber von Windows und Linux implementiert, da
+sie grundlegend für die Ausführung mehrerer Prozesse sind.
+
+3. Dateien
+Sowohl in Windows als auch in Linux wird das Dateien-Konzept implementiert.
+Während Windows aber noch andere Datenstrukturen als Dateien kennt,
+ist bei Linux alles eine Datei. Also auch auf Character-Devices kann zugegriffen
+werden wie auf eine normale Datei.
