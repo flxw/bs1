@@ -1,0 +1,10 @@
+# Erklären Sie Ihrem Tutor die Begriffe Programm, Prozess, Thread und Task!
+# Worin bestehen die Unterschiede zwischen diesen Begriffen?
+
+- Programm: Ein Programm ist der ausführbare Maschinencode mit evtl. zusätzlichen Daten. Ein Programm kann nicht im wahren Sinne des Wortes ausgeführt werden - es wird ein Prozess erzeugt mit einem Thread, welcher dann Code ausführt.
+
+- Prozess: Instanz eines Programm in Ausführung - "Hülle" für den auszuführenden Code. Jeder Prozess enthält mindestens einen Thread (automatisch wird ein Thread gespawnt, welcher main() ausführt). Ein Prozess enthält den Adressraum, die offenen Handles sowie das Sicherheitsprofil (z.B. den Security oder Access Token) einer Programminstanz.
+
+- Thread: In einem Thread wird der Code eines Programms (im Kontext eines Prozesses) ausgeführt. Ein Thread ist (wie der Name sagt) ein "Handlungsstrang". Ein Thread ist das, was letztendlich "ausführbar" ist und vom Scheduler unabhängig vom Prozess CPU-Zeit zugewiesen bekommt - ein Prozess selbst bekommt keine CPU-Zeit. Alle Threads teilen sich die Ressourcen eines Prozesses (Adressraum, Handles, ...).
+
+- Task: Abhängig vom Kontext ein Synonym zu Prozess (meistens) oder auch Thread.
