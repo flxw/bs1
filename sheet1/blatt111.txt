@@ -6,6 +6,12 @@
 
 # Nennen Sie Beispiele für Betriebssystemfunktionalität die im Kernel- bzw. im
 # User-Mode implementiert werden müssen!
+Prozessor-, Speicher- und Geräteverwaltung müssen im Kernel implementiert sein,
+damit das Betriebssystem überhaupt die ihm angedachte Funktionalität
+bereitstellen kann. Im Usermode sollte hingegen Funktionalität implementiert
+werden, die nicht immer zuverlässig ist, und nicht unbedingt notwendig für den
+Betrieb des Systems ist, also leicht durch den Nutzer austauschbar ist (wie z.B.
+Windowmanager).
 
 # Was sind Vor- und Nachteile der Trennung von Kernel- und Usermode?
 Geschwindigkeit ist ein Nachteil. Durch Systemaufrufe, die im Kernel
@@ -14,5 +20,7 @@ kann unter Umständen Zeit kosten.
 Sicherheit ist ein Vorteil, da nun Speicherbereiche des Betriebssystems
 geschützt sind, und gewisse Funktionen nicht ohne die Überprüfung des
 Betriebssystems ausgeführt werden können.
+Weiterhin muss der im Kernelmode laufende Code absolut zuverlässig und
+fehlerfrei sein  (1.2/18)
 
 # vim: tw=80
