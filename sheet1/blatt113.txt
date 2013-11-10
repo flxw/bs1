@@ -1,0 +1,15 @@
+# Wie lässt sich in der Verzeichnisstruktur auf den Kernelaufbau abbilden?
+
+
+# Welche Teile des Windows-Kernels sind nicht im WRK enthalten?
+- Hardware Abstraction Layer / HAL
+- ...
+
+# In welchen Dateien werden Scheduling Entscheidungen getroffen?
+Windows: base/ntos/ke/thredsup.c (KiSelectNextThread - gibt unter Berücksichtigung der Affinitäten und Priorities den nächsten Thread zurück, welcher auf einem gegebenen Prozessor laufen soll)
+(evtl auch zu bemerken: /base/ntos/ke/isched.c (idle scheduling))
+
+Linux: Generell in kernel/sched/ z.B. "Completely Fair Scheduling (CFS)" in kernel/sched/fair.c
+
+# Laden Sie sich die Quellen Linux (kernel.org) / WRK von https://maniac.hpi.uni-potsdam.de/ herunter.
+Done.
