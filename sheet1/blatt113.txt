@@ -57,8 +57,6 @@ linux-2.6.32.61/
 ├── usr
 └── virt
 
-21 directories
-
 # Welche Teile des Windows-Kernels sind nicht im WRK enthalten?
 - Hardware Abstraction Layer / HAL
 - Dateisysteme
