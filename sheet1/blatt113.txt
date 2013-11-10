@@ -1,15 +1,76 @@
 # Wie lässt sich in der Verzeichnisstruktur auf den Kernelaufbau abbilden?
+- Generell: Module bzw. Komponenten werden durch die Verzeichnisstruktur geordnet.
+So gibt es z.B. sowohl im Windows- als auch im Linux-Kern ein Verzeichnis namens "mm", welches Funktionalität zur Speicherverwaltung / Memory Management zusammenfasst.
+Die Hierarchie des Kernels kann allerdings nur bedingt aus der Verzeichnisstruktur erkannt werden.
 
+- Windows:
+base/ntos
+├── build
+├── cache
+├── config (registry)
+├── dbgk (user-mode debugger support)
+├── ex (executive - kernel heap, synchronization, ...)
+├── fsrtl
+├── fstub 
+├── inc
+├── init 
+├── io (I/O manager)
+├── ke (scheduler, CPU management, ...)
+├── lpc (local procedure call - effiziente IPC)
+├── mm (virtual memory management)
+├── ob (object manager)
+├── perf 
+├── ps (process / thread support)
+├── raw 
+├── rtl
+├── se (security)
+├── vdm
+├── verifier
+└── wmi
+
+- Linux: 
+linux-2.6.32.61/
+├── Documentation
+├── arch (CPU architecture dependent code)
+├── block (block device drivers)
+├── crypto
+├── drivers (device drivers)
+├── firmware (devicde dependent firmware files)
+├── fs (file systems)
+├── include
+├── init
+├── ipc (inter-process communication)
+├── kernel (processes, signals, scheduling, ...)
+│   ├── gcov
+│   ├── irq (interrupts)
+│   ├── power
+│   ├── time
+│   └── trace
+├── lib
+├── mm (virtual memory management)
+├── net (network protocols)
+├── samples
+├── scripts
+├── security
+├── sound
+├── tools
+├── usr
+└── virt
+
+21 directories
 
 # Welche Teile des Windows-Kernels sind nicht im WRK enthalten?
 - Hardware Abstraction Layer / HAL
-- ...
+- Dateisysteme
+- Netzwerk-Stacks
+- Gerätetreiber
+- ...?
 
 # In welchen Dateien werden Scheduling Entscheidungen getroffen?
-Windows: base/ntos/ke/thredsup.c (KiSelectNextThread - gibt unter Berücksichtigung der Affinitäten und Priorities den nächsten Thread zurück, welcher auf einem gegebenen Prozessor laufen soll)
+- Windows: base/ntos/ke/thredsup.c (KiSelectNextThread - gibt unter Berücksichtigung der Affinitäten und Priorities den nächsten Thread zurück, welcher auf einem gegebenen Prozessor laufen soll)
 (evtl auch zu bemerken: /base/ntos/ke/isched.c (idle scheduling))
 
-Linux: Generell in kernel/sched/ z.B. "Completely Fair Scheduling (CFS)" in kernel/sched/fair.c
+- Linux: Generell in kernel/sched/ z.B. "Completely Fair Scheduling (CFS)" in kernel/sched/fair.c
 
 # Laden Sie sich die Quellen Linux (kernel.org) / WRK von https://maniac.hpi.uni-potsdam.de/ herunter.
 Done.
