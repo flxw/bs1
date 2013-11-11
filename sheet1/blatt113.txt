@@ -65,7 +65,7 @@ linux-2.6.32.61/
 - ...?
 
 # In welchen Dateien werden Scheduling Entscheidungen getroffen?
-- Windows: base/ntos/ke/thredsup.c (KiSelectNextThread - gibt unter Berücksichtigung der Affinitäten und Priorities den nächsten Thread zurück, welcher auf einem gegebenen Prozessor laufen soll)
+- Windows: base/ntos/ke/thredsup.c (KiSelectNextThread) sowie /base/ntos/ke/ki.h (KiSelectReadyThread) - gibt unter Berücksichtigung der Affinitäten und Priorities den nächsten Thread zurück, welcher auf einem gegebenen Prozessor laufen soll)
 (evtl auch zu bemerken: /base/ntos/ke/isched.c (idle scheduling))
 
 - Linux: Generell in kernel/sched/ z.B. "Completely Fair Scheduling (CFS)" in kernel/sched/fair.c
