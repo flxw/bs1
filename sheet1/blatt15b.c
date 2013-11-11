@@ -11,8 +11,7 @@ NTSTATUS CallNtQueryInformationProcess(IN HANDLE ProcessHandle,
             IN ULONG ProcessInformationLength,
             OUT PULONG ReturnLength) {
         __asm {
-//            mov eax, 0x00ea
-			mov eax, 0x00af // Windows 8 developer preview ( I got 8.1. ..)
+            mov eax, 0x00ea
             mov edx, 0x7FFE0300
             call dword ptr [edx]
 
