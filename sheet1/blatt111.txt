@@ -3,6 +3,8 @@
 2. Abarbeitung von mehreren Programmen
 3. Multiprogrammierung
 4. Time-Sharing
+5. Speichermanagement
+6. Gerätemanagement
 
 # Nennen Sie Beispiele für Betriebssystemfunktionalität die im Kernel- bzw. im
 # User-Mode implementiert werden müssen!
