@@ -1,6 +1,6 @@
-blatt15a: getpid.c
+blatt15a: blatt15a.c
 
-blatt15b: getpid.c
+blatt15b: blatt15b.c
 
 .PHONY:
 clean:
