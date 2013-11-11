@@ -11,7 +11,8 @@ NTSTATUS CallNtQueryInformationProcess(IN HANDLE ProcessHandle,
             IN ULONG ProcessInformationLength,
             OUT PULONG ReturnLength) {
         __asm {
-            mov eax, 0x00ea
+//            mov eax, 0x00ea
+			mov eax, 0x00af // Windows 8 developer preview ( I got 8.1. ..)
             mov edx, 0x7FFE0300
             call dword ptr [edx]
 
@@ -20,9 +21,16 @@ NTSTATUS CallNtQueryInformationProcess(IN HANDLE ProcessHandle,
 }
 
 int main(int argc, char** argv) {
-    DWORD userspaceId = GetCurrentProcessId();
-    /*DWORD kernelspaceId = CallNtQueryInformationProcess(GetCurrentProcess(),*/
 
-    printf("syscall: XX usermode-API: %i\n", userspaceId);
-    getch();
+	PROCESS_BASIC_INFORMATION output;
+	unsigned long buffersize = sizeof(output);
+	unsigned long outputsize = 0;
+
+    DWORD userspaceId = GetCurrentProcessId();
+	NTSTATUS kernelspaceStatus = CallNtQueryInformationProcess(GetCurrentProcess(), 0, &output, buffersize, &outputsize);
+
+	DWORD kernelspaceId = output.UniqueProcessId;
+
+	printf("syscall: %i usermode-API: %i\n", kernelspaceId, userspaceId);
+    _getch();
 }
