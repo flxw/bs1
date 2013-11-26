@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>BMP Format</title>
+</head>
+<body>
+<h1 align="center">Formatbeschreibung BMP-Datei</h1>
+<p>&nbsp;</p>
+<p>
+BMP Bilder werden im sogenannten <i>device-independent bitmap</i> (DIB) Format gespeichert.
+Jede Bitmap Datei enthält einen Bitmap-Datei-Header und eine Folge von Bytes, 
+welche die Farbinformationen repräsentieren.</p>
+<h2>Bitmap Header</h2>
+
+<table border="1">
+<tr>
+    <td>Dateiposition</td><td>Beschreibung</td><td>Gr&ouml;ße in Byte</td><td>Standardwert für die Aufgabe</td>
+</tr>
+<tr> 
+     <td>0</td><td>Signatur</td><td>2</td><td>'BM' = 0x4D42</td>
+</tr>     
+<tr>
+    <td>2</td><td>Gr&ouml;ße der Datei in Byte</td><td>4</td><td>Headergröße
+      + Größe
+      des Bildes in Byte</td>
+</tr>
+<tr>
+     <td>6</td><td>Reserviert</td><td>4</td><td>immer 0</td>
+</tr>
+<tr>
+     <td>10</td><td>Offset der Bilddaten relative zum Dateibeginn</td><td>4</td><td>54,Größe
+      der Header-Informationen</td>
+</tr>
+<tr>
+     <td>14</td><td>Gr&ouml;ße der noch folgenden Header-Daten in Byte,
+      beginnent mit dieser Dateiposition</td><td>4</td><td>40</td>
+</tr>
+<tr>
+    <td>18</td><td>Breite des Bildes in Pixel</td><td>4</td><td>500</td>
+</tr>
+<tr>
+    <td>22</td><td>H&ouml;he des Bildes in Pixel</td><td>4</td><td>500</td>
+</tr>
+<tr>
+    <td>26</td><td>Anzahl der Planes</td><td>2</td><td>Immer 1</td>
+</tr>
+<tr>
+    <td>28</td><td>Bits pro Pixel</td><td>2</td><td>24</td>
+</tr>
+<tr>
+    <td>30</td><td>Komprimierung</td><td>4</td><td>0, keine Komprimierung</td>
+</tr>
+<tr>
+    <td>34</td><td>Gr&ouml;ße des Bildes in Byte</td><td>4</td><td>(Breite * Byte pro Pixel
+      + Padding) *Höhe</td>
+</tr>
+<tr>
+    <td>38</td><td>Horizontale Aufl&ouml;sung in Pixel</td><td>4</td><td>0</td>
+</tr>
+<tr>
+    <td>42</td><td>Vertikale Aufl&ouml;sung in Pixel</td><td>4</td><td>0</td>
+</tr>
+<tr>
+    <td>46</td><td>Anzahl der Farbtabellen</td><td>4</td><td>0, da volle Farbinformationen</td>
+</tr>
+<tr>
+    <td>50</td><td>Anzahl der wichtigen Farben</td><td>4</td><td>0, da volle Farbinformationen</td>
+</tr>
+<tr>
+    <td>54</td><td>Beginn der Farbinformationen</td><td>H&ouml;he*(Breite*3)</td><td>BGR Farbwerte</td>
+</tr>
+</table>
+<p>Alle Werte sind im Little Endian Format (Lo-Teil,Hi-Teil) zu behandeln.</p>
+<p>Die Farbinformationen werden zeilenweise für jeden Pixel in 3
+aufeinanderfolgenden Bytes: <b>B</b>lauwert, <b>G</b>rünwert, <b>R</b>otwert (BGR) gespeichert.&nbsp;
+Die Pixel der Zeilen werden beginnend mit der linken unteren Ecke
+von links nach rechts zur rechten oberen Ecke gespeichert. Die 1. Zeile in der
+Datei ist demnach 499, die letzte Zeile ist 0.&nbsp;</p>
+<p>Die L&auml;nge&nbsp; (Breite*Byte pro Pixel) einer Zeile muss durch 4 teilbar
+sein. 
+Ist dies nicht der Fall so werden sogenannte Padding-Bytes mit dem Wert 0 eingefügt.&nbsp;</p>
+<p> Durch die unkomprimierte Speicherung der
+Farbwerte (24 Bit pro Pixel) ist die Position jedes Farbwertes statisch
+berechenbar.&nbsp;&nbsp;</p>
+<p> Der Grünwert des Pixels an der Position x=100, y=100 befindet sich bei:&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Headergröße +
+(Höhe-1 - y)&nbsp; *&nbsp; (Breite*3+(Breite*3 mod 4)) + x*3+1 = 54 + (499-100)*(1500 + (1500 mod 4)) + 300 +1 =
+598855</p>
+<p>Beispielbild: <a href="mandelbrot.bmp">mandelbrot.bmp</a></p>
+<p>&nbsp;</p>
+</body>
