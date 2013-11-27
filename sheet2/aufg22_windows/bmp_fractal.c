@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	//int threadCount = atoi(argv[1]);
 	int threadId,currentCalculation;
 	int assignedCoordinates = 0;
-	int threadCount = 65;
+	int threadCount = 100;
 	int calculationsPerThread = ceil((float)XSIZE*YSIZE/(float)threadCount);
     int len,x,y;
     char *dsc;
@@ -171,7 +171,9 @@ int main(int argc, char *argv[])
 	}
 
 	// --- thread shutdown ----
-	WaitForMultipleObjects(threadCount, threadHandles, TRUE, INFINITE);
+	for(i = 0; i < threadCount; i += MAXIMUM_WAIT_OBJECTS) {
+		WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, threadHandles, TRUE, INFINITE);
+	}
 
 	// --- extract results ----
 	assignedCoordinates = 0;
@@ -184,19 +186,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
-	/*for(y=YSIZE-1;y>=0;y--)
-    {
-            for(x=0;x<XSIZE;x++)
-            {
-                len=fwrite(&colorArray[y][x],1,3,fd);
-                if(-1==len || len!=3)
-                {
-                    perror("write");
-                    exit(4);
-                }
-            }
-    } */
 
     fclose(fd);
 }
