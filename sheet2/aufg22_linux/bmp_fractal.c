@@ -8,11 +8,36 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #define XSIZE 500
 #define YSIZE 500
 #include "algorithm.h"
 
+struct ThreadData {
+    char** calculatedColors;
+    int startPos;
+    int pixelCount;
+};
+
+
+void threadRoutine (void *dataPointer) {
+    struct ThreadData *td = (struct ThreadData *) dataPointer;
+    int i, x, y;
+    char* c;
+
+    for (i = 0; i < td->pixelCount; ++i) {
+        x = (td->startPos + i) % XSIZE;
+        y = (td->startPos + i) / XSIZE;
+        c = td->calculatedColors[x][y];
+
+        printf("pos %d = [%d][%d]\n", td->startPos + i, x, y);
+
+        getColorValuesAt(x * (2.0 / XSIZE) - 1.5, y * (2.0 / YSIZE) - 1.0,&c[2],&c[1],&c[0]);
+    }
+
+return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +48,22 @@ int main(int argc, char *argv[])
     short svalue;
     int   lvalue;
     unsigned char header[54],*ptr=&header[0];
+    int threadCount;
+    char filename[512];
+    int calculationsPerThread;
+    char colorArray[YSIZE][XSIZE][3];
+
+    if(argc != 3) {
+        perror("usage: bmp_fractal threadCount outputFilename.bmp");
+        return 1;
+    }
+
+    // set thread count
+    if((threadCount = atoi(argv[1])) < 1) {
+        perror("That is not a valid thread count.");
+        return 1;
+    }
+    calculationsPerThread = ceil((float)XSIZE*YSIZE/(float)threadCount);
 
     getDescription(NULL,&len);
     if(NULL==(dsc=(char*)malloc(sizeof(char)*len)))
@@ -33,7 +74,8 @@ int main(int argc, char *argv[])
     getDescription(dsc,&len);
 
     printf("Calculate %s %d\n",dsc,getId());
-    fd=fopen("test.bmp","wb+");
+    // open the file
+    fd=fopen(argv[2],"wb+");
     if(NULL==fd)
     {
         perror("open"); exit(1);
