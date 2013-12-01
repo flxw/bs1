@@ -15,55 +15,59 @@
 #include "algorithm.h"
 
 struct ThreadData {
-    char** calculatedColors;
     int startPos;
     int pixelCount;
 };
 
+// globals ftw oder so
+char colorArray[YSIZE][XSIZE][3];
 
-void threadRoutine (void *dataPointer) {
+
+void *threadRoutine (void *dataPointer) {
     struct ThreadData *td = (struct ThreadData *) dataPointer;
     int i, x, y;
     char* c;
 
+    printf("new thread starting at offset %d, calculating %d values.\n", td->startPos, td->pixelCount);
+
     for (i = 0; i < td->pixelCount; ++i) {
         x = (td->startPos + i) % XSIZE;
         y = (td->startPos + i) / XSIZE;
-        c = td->calculatedColors[x][y];
-
-        printf("pos %d = [%d][%d]\n", td->startPos + i, x, y);
+        c = colorArray[y][x];
 
         getColorValuesAt(x * (2.0 / XSIZE) - 1.5, y * (2.0 / YSIZE) - 1.0,&c[2],&c[1],&c[0]);
     }
 
-return 0;
+    // we are the only one with a pointer to this - free it
+    free(td);
+    td = NULL;
 }
 
 int main(int argc, char *argv[])
 {
     FILE *fd;
-    int len,x,y;
+    int len,x,y,i;
     char *dsc;
     char bgr[3];
     short svalue;
     int   lvalue;
     unsigned char header[54],*ptr=&header[0];
     int threadCount;
-    char filename[512];
     int calculationsPerThread;
-    char colorArray[YSIZE][XSIZE][3];
+    pthread_t * threads;
+
 
     if(argc != 3) {
         perror("usage: bmp_fractal threadCount outputFilename.bmp");
         return 1;
     }
 
-    // set thread count
     if((threadCount = atoi(argv[1])) < 1) {
         perror("That is not a valid thread count.");
         return 1;
     }
-    calculationsPerThread = ceil((float)XSIZE*YSIZE/(float)threadCount);
+
+    calculationsPerThread = ceil( (float)XSIZE * (float)YSIZE / (float)threadCount);
 
     getDescription(NULL,&len);
     if(NULL==(dsc=(char*)malloc(sizeof(char)*len)))
@@ -73,6 +77,7 @@ int main(int argc, char *argv[])
     }
     getDescription(dsc,&len);
 
+    // Goennen Sie sich die Funktion getId der algorithm.h, welche sehr klar zugeordnet werden kann
     printf("Calculate %s %d\n",dsc,getId());
     // open the file
     fd=fopen(argv[2],"wb+");
@@ -134,14 +139,41 @@ int main(int argc, char *argv[])
         perror("write");
         exit(2);
     }
-#pragma message("!!!!       Implement Multithreading here    !!!!")
+
+    printf("We need %d threads, each calculating %d values (except last one).\n", threadCount, calculationsPerThread);
+
+    threads = (pthread_t*) malloc(threadCount * sizeof(pthread_t));
+
+    for(i=0; i<threadCount; i++) {
+        struct ThreadData* td = (struct ThreadData*) malloc(sizeof(struct ThreadData));
+        td->startPos = i * calculationsPerThread;
+        td->pixelCount = calculationsPerThread;
+        if(td->startPos + td->pixelCount > XSIZE * YSIZE) {
+            printf("trimming %d to %d\n", td->pixelCount, ((XSIZE * YSIZE) - td->startPos));
+            td->pixelCount = (XSIZE * YSIZE) - td->startPos;
+        }
+
+        pthread_create(&threads[i], NULL, threadRoutine, (void*) td);
+    }
+
+    printf("waiting for threads...\n");
+
+    for(i=0; i<threadCount; i++) {
+        pthread_join(threads[i], NULL);
+        printf("thread %d joined.\n", i);
+    }
+
+    /* write precalculated values to the file */
     for(y=YSIZE-1;y>=0;y--)
     {
             for(x=0;x<XSIZE;x++)
             {
-                getColorValuesAt(x * (2.0 / XSIZE) - 1.5, y * (2.0 / YSIZE) - 1.0,&bgr[2],&bgr[1],&bgr[0]);
+		//getColorValuesAt(x * (2.0 / XSIZE) - 1.5, y * (2.0 / YSIZE) - 1.0,&bgr[2],&bgr[1],&bgr[0]);
+                bgr[0] = colorArray[y][x][2];
+                bgr[1] = colorArray[y][x][1];
+                bgr[2] = colorArray[y][x][0];
 
-                len=fwrite(bgr,1,3,fd);
+                len=fwrite(&bgr,1,3,fd);
                 if(-1==len || len!=3)
                 {
                     perror("write");
