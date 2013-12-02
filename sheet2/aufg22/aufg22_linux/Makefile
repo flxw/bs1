@@ -1,7 +1,7 @@
 LOADLIBES=-lfractal -lm -lpthread
 LDFLAGS=-L$(shell uname -m)
-all: bmp_fractal
+all: aufg22
 
 clean:
-	@rm -f bmp_fractal bmp_fractal.o
+	@rm -f aufg22 aufg22.o
 
