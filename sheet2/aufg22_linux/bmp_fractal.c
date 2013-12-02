@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <math.h>
 
 #define XSIZE 500
 #define YSIZE 500
@@ -43,8 +44,7 @@ void *threadRoutine (void *dataPointer) {
     td = NULL;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     FILE *fd;
     int len,x,y,i;
     char *dsc;
@@ -59,19 +59,18 @@ int main(int argc, char *argv[])
 
     if(argc != 3) {
         perror("usage: bmp_fractal threadCount outputFilename.bmp");
-        return 1;
+        exit(1);
     }
 
     if((threadCount = atoi(argv[1])) < 1) {
         perror("That is not a valid thread count.");
-        return 1;
+        exit(1);
     }
 
     calculationsPerThread = ceil( (float)XSIZE * (float)YSIZE / (float)threadCount);
 
     getDescription(NULL,&len);
-    if(NULL==(dsc=(char*)malloc(sizeof(char)*len)))
-    {
+    if(NULL==(dsc=(char*)malloc(sizeof(char)*len))) {
         perror("malloc");
         exit(1);
     }
@@ -81,8 +80,7 @@ int main(int argc, char *argv[])
     printf("Calculate %s %d\n",dsc,getId());
     // open the file
     fd=fopen(argv[2],"wb+");
-    if(NULL==fd)
-    {
+    if(NULL==fd) {
         perror("open"); exit(1);
     }
 
@@ -134,18 +132,27 @@ int main(int argc, char *argv[])
 
     len=fwrite(header,1,sizeof(header),fd); //write header
 
-    if(-1==len || len!=sizeof(header))
-    {
+    if(-1==len || len!=sizeof(header)) {
         perror("write");
         exit(2);
     }
 
-    printf("We need %d threads, each calculating %d values (except last one).\n", threadCount, calculationsPerThread);
-
+    // allocate space for the threads - free them after they joined
     threads = (pthread_t*) malloc(threadCount * sizeof(pthread_t));
+    if(threads == NULL) {
+	perror("malloc for threads failed");
+	exit(2);
+    }
 
     for(i=0; i<threadCount; i++) {
+	// allocate space for the ThreadData structs
+	// each thread will free those themselves so we can 'leak' it here
         struct ThreadData* td = (struct ThreadData*) malloc(sizeof(struct ThreadData));
+	if(td == NULL) {
+		perror("malloc for ThreadData failed");
+		exit(2);
+	}
+
         td->startPos = i * calculationsPerThread;
         td->pixelCount = calculationsPerThread;
         if(td->startPos + td->pixelCount > XSIZE * YSIZE) {
@@ -153,6 +160,7 @@ int main(int argc, char *argv[])
             td->pixelCount = (XSIZE * YSIZE) - td->startPos;
         }
 
+	// takeoff!
         pthread_create(&threads[i], NULL, threadRoutine, (void*) td);
     }
 
@@ -162,20 +170,15 @@ int main(int argc, char *argv[])
         pthread_join(threads[i], NULL);
         printf("thread %d joined.\n", i);
     }
+    
+    // free thread memory
+    free(threads);
 
     /* write precalculated values to the file */
-    for(y=YSIZE-1;y>=0;y--)
-    {
-            for(x=0;x<XSIZE;x++)
-            {
-		//getColorValuesAt(x * (2.0 / XSIZE) - 1.5, y * (2.0 / YSIZE) - 1.0,&bgr[2],&bgr[1],&bgr[0]);
-                bgr[0] = colorArray[y][x][2];
-                bgr[1] = colorArray[y][x][1];
-                bgr[2] = colorArray[y][x][0];
-
-                len=fwrite(&bgr,1,3,fd);
-                if(-1==len || len!=3)
-                {
+    for(y=YSIZE-1;y>=0;y--) {
+            for(x=0;x<XSIZE;x++) {
+	    	len=fwrite(&colorArray[y][x], 1, 3, fd);
+                if(-1==len || len!=3) {
                     perror("write");
                     exit(4);
                 }
@@ -184,4 +187,12 @@ int main(int argc, char *argv[])
     }
     fclose(fd);
 
+    // I could free the char *dsc here that was malloc'ed beforehand
+    // 
+    // Quite funny that non-freed memory will give penalty
+    // but in the initial setting they leak memory... :p
+    free(dsc);
+
+    // let's be verbose and explicitly return 0
+    return 0;
 }
