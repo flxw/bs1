@@ -43,10 +43,9 @@ DWORD WINAPI calculateColorsInsideThread(LPVOID stupidVoid) {
 int main(int argc, char *argv[])
 {
     FILE *fd;
-	//int threadCount = atoi(argv[1]);
+	int threadCount = atoi(argv[1]);
 	int threadId,currentCalculation;
 	int assignedCoordinates = 0;
-	int threadCount = 100;
 	int calculationsPerThread = ceil((float)XSIZE*YSIZE/(float)threadCount);
     int len,x,y;
     char *dsc;
@@ -81,7 +80,7 @@ int main(int argc, char *argv[])
     getDescription(dsc,&len);
     
     printf("Calculate %s %d\n",dsc,getId());
-    fd=fopen("test.bmp","wb+");
+    fd=fopen(argv[2],"wb+");
     if(NULL==fd)
     {
         perror("open"); exit(1);
