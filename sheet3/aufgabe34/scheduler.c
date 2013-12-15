@@ -21,8 +21,8 @@ void UpdateStarvationCount(PDISPATCHER_TASK NextRunningTask) {
 
 		ThisListEntryTask = CONTAINING_RECORD(ThisListEntry, DISPATCHER_TASK, Link);
 
-		// Update and boost if starving
-		if((ThisListEntryTask->WaitCount++) > STARVATION_THRESHOLD) {
+		// Update and boost if starving - but ignore "idle" thread
+		if((ThisListEntryTask) && (ThisListEntryTask->WaitCount++) > STARVATION_THRESHOLD) {
 			
 			RemoveEntryList(ThisListEntry);
 			InsertHeadList(&ReadyQueues[SCHED_PRIORITY_HIGH], ThisListEntry);
@@ -35,8 +35,8 @@ void UpdateStarvationCount(PDISPATCHER_TASK NextRunningTask) {
 		ThisListEntry = NextListEntry;
 	}
 
-	// lower priority if next task was boosted
-	if (NextRunningTask->Priority > NextRunningTask->BasePriority) {
+	// lower priority if next task was boosted - again, ignore "idle" thread
+	if ((NextRunningTask) && NextRunningTask->Priority > NextRunningTask->BasePriority) {
 		NextRunningTask->Priority = NextRunningTask->BasePriority;
 	}
 }
