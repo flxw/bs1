@@ -20,6 +20,8 @@ typedef struct _DISPATCHER_TASK {
 	HANDLE ThreadHandle;
 	LIST_ENTRY Link;
 	UCHAR Priority;
+	UCHAR BasePriority; // if boosted, this is the base priority it should return to
+	UINT WaitCount; // the amount of ticks that this thread is already waiting
 	
 	//
 	// Add necessary information here 

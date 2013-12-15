@@ -59,6 +59,8 @@ BOOL RegisterTask(HANDLE Thread, UCHAR Priority, PDISPATCHER_CONFIG Config) {
 
 	NewTask->ThreadHandle = Thread;
 	NewTask->Priority = Priority;
+	NewTask->BasePriority = Priority;
+	NewTask->WaitCount = 0;
 
 	return AddThread(NewTask);
 }
