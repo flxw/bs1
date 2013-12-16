@@ -7,40 +7,6 @@
 #define STARVATION_THRESHOLD 10
 LIST_ENTRY ReadyQueues[2];
 
-void UpdateStarvationCount(PDISPATCHER_TASK NextRunningTask) {
-	PLIST_ENTRY ThisListEntry;
-	PLIST_ENTRY NextListEntry;
-	PDISPATCHER_TASK ThisListEntryTask;
-
-	// Iterate low priority list
-	// - high priority processes won't starve
-	// - remember that therefore, high priority processes won't have correct waiting counts!
-	ThisListEntry = &ReadyQueues[SCHED_PRIORITY_LOW];
-	while(ThisListEntry->Blink != ThisListEntry) {
-		NextListEntry = ThisListEntry->Blink;
-
-		ThisListEntryTask = CONTAINING_RECORD(ThisListEntry, DISPATCHER_TASK, Link);
-
-		// Update and boost if starving - but ignore "idle" thread
-		if((ThisListEntryTask) && (ThisListEntryTask->WaitCount++) > STARVATION_THRESHOLD) {
-			
-			RemoveEntryList(ThisListEntry);
-			InsertHeadList(&ReadyQueues[SCHED_PRIORITY_HIGH], ThisListEntry);
-
-#ifdef DBG_OUTPUT
-			printf("[DEBUG] boosting task = %p\n", ThisListEntryTask->ThreadHandle);
-#endif
-		}
-		
-		ThisListEntry = NextListEntry;
-	}
-
-	// lower priority if next task was boosted - again, ignore "idle" thread
-	if ((NextRunningTask) && NextRunningTask->Priority > NextRunningTask->BasePriority) {
-		NextRunningTask->Priority = NextRunningTask->BasePriority;
-	}
-}
-
 PDISPATCHER_TASK Schedule(PDISPATCHER_TASK OldThread) {
 
 	PDISPATCHER_TASK NextTask;
@@ -63,7 +29,7 @@ PDISPATCHER_TASK Schedule(PDISPATCHER_TASK OldThread) {
 	// get list entry for next task
 	NextTask = CONTAINING_RECORD(NextTaskListEntry, DISPATCHER_TASK, Link);
 
-	UpdateStarvationCount(NextTask);
+	// UpdateStarvationCount();
 
 	// re-insert task at list tail, but skip the "idle" thread
 	if (OldThread)
