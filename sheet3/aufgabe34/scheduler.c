@@ -12,17 +12,27 @@ PDISPATCHER_TASK Schedule(PDISPATCHER_TASK OldThread) {
 	PDISPATCHER_TASK NextTask;
 	PLIST_ENTRY NextTaskListEntry;
 	PLIST_ENTRY ReadyQueue;
+	static unsigned int HighPrioCounter = 0;
 
-	if (!IsListEmpty(&ReadyQueues[SCHED_PRIORITY_HIGH]))
+	if (
+		!IsListEmpty(&ReadyQueues[SCHED_PRIORITY_HIGH])
+		&& (HighPrioCounter < STARVATION_THRESHOLD || IsListEmpty(&ReadyQueues[SCHED_PRIORITY_LOW])) // low prio list is not yet starving or not ready
+		)
 	{
 		ReadyQueue = &ReadyQueues[1];
+		HighPrioCounter++;
 	}
 	else if (!IsListEmpty(&ReadyQueues[SCHED_PRIORITY_LOW]))
 	{
 		ReadyQueue = &ReadyQueues[0];
+		HighPrioCounter = 0;
 	}
 	else
+	{
 		return OldThread;
+	}
+
+	printf("HighPrioCounter = %d\n", HighPrioCounter);
 
 	NextTaskListEntry = RemoveHeadList(ReadyQueue);
 
