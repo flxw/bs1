@@ -1,5 +1,6 @@
 #include "memory.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 /* Do not change !! */
@@ -7,88 +8,87 @@ static char mem[4096];
 
 
 #ifdef BUDDY
-void *bs_malloc(size_t size)
-{
+void *bs_malloc(size_t size) {
     errno=ENOMEM;
     return NULL;
 }
 
-void bs_free(void *ptr)
-{
+void bs_free(void *ptr) {
 }
 #endif 
 
 #ifdef FIRST
 
-typedef struct freeEntry{
+typedef struct Node {
+    unsigned int startPos;
     unsigned int size;
-    struct freeEntry* next;
-} freeEntry;
+    char free;
+    struct Node* next;
+} Node;
 
-freeEntry* first;
+Node* head;
 
-void memInit(void) {
-    first = (freeEntry*)(&mem[0]);
-    first->size = 4096 - sizeof(freeEntry);
-    first->next = NULL;
+void memoryInit(void) {
+    head = (Node*)malloc(sizeof(Node));
+    head->startPos = 0;
+    head->size = 4096;
+    head->free = 1;
+    head->next = NULL;
 }
 
-void *bs_malloc(size_t size)
-{
-    freeEntry* currentEntry = first;
-    freeEntry* previousFreeEntry = first;
+void memoryCleanup(void) {
+    Node* ptr;
+    while(head->next != NULL) {
+        ptr = head->next;
+        head->next = ptr->next;
+        free(ptr);
+    }
+    free(head);
+}
 
-    while(currentEntry->size < (size + sizeof(unsigned int))) {
-        printf("freeEntry @ %p with size %d is too small - using %p\n", currentEntry, currentEntry->size, currentEntry->next);
-        if(currentEntry->next == NULL) {
+void *bs_malloc(size_t size) {
+    Node* nodePtr = head;
+    while((!nodePtr->free) || (nodePtr->size < size)) {
+        nodePtr = nodePtr->next;
+        if(nodePtr == NULL) {
+            printf("Not enough space left :(\n");
             errno = ENOMEM;
             return NULL;
         }
-
-        previousFreeEntry = currentEntry;
-        currentEntry = currentEntry->next;
-        getchar();
     }
 
-    printf("Choosing free block @ %p\n", currentEntry);
+    void* returnValue = (void*)(mem + nodePtr->startPos);
 
-    // this position will be returned
-    char* returnPos = ((char*)(currentEntry + 1));
+    // this block is used
+    nodePtr->free = 0;
 
-    // create new freeEntry after data block
-    freeEntry* newFreeEntry = (freeEntry*)(returnPos + size + 1);
-    newFreeEntry->next = currentEntry->next;
-    newFreeEntry->size = currentEntry->size - size;
+    // maybe we need to shuffle the next block around
+    int sizeDifference = nodePtr->size - size;
+    nodePtr->size = size;
+    printf("trimmed block @ %d to size %d\n", nodePtr->startPos, nodePtr->size);
 
-    if(previousFreeEntry == first) {
-        first = newFreeEntry;
-    }else{
-        previousFreeEntry->next = newFreeEntry;
+    if(sizeDifference > 0) {
+        if(nodePtr->next && nodePtr->next->free) {
+            // free block, adjust size
+            nodePtr->next->startPos = nodePtr->next->startPos - sizeDifference;
+            nodePtr->next->size = nodePtr->next->size + sizeDifference;
+            printf("next block @ %d grown to size %d\n", nodePtr->next->startPos, nodePtr->next->size);
+        }else{
+            // used block, create new free block in between
+            Node* newFreeNode = (Node*)malloc(sizeof(Node));
+            newFreeNode->startPos = nodePtr->startPos + size;
+            newFreeNode->size = sizeDifference;
+            newFreeNode->free =1;
+            newFreeNode->next = nodePtr->next;
+            nodePtr->next = newFreeNode;
+            printf("new free block @ %d with size %d\n", newFreeNode->startPos, newFreeNode->size);
+        }
     }
 
-    printf("New freeEntry @ %p with size %d\n", newFreeEntry, newFreeEntry->size);
-
-    // create block info in front of block
-    unsigned int* dataSize = ((unsigned int*)returnPos) + 1;
-    *dataSize = size;
-
-    printf("dataSize @ %p = %d\n\n", dataSize, *dataSize);
-
-    return (void*)returnPos;
+    return returnValue;
 }
 
-void bs_free(void *ptr)
-{
-    printf("returning data @ %p\n", ptr);
-    unsigned int* dataSize = ((unsigned int*)ptr) - 1);
-    printf("data Size: %d\n", *dataSize);
-
-    // create new freeEntry
-    freeEntry* newFreeEntry = (freeEntry*)dataSize;
-    newFreeEntry->next = first->next;
-    first->next = newFreeEntry;
-    newFreeEntry->size = *dataSize - sizeof(freeEntry);
-
+void bs_free(void *ptr) {
 }
 #endif
   

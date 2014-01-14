@@ -1,6 +1,6 @@
 
 aufg42_first: aufg42.o
-	$(CC) $(CFLAGS) -DFIRST -c memory.c
+	$(CC) $(CFLAGS) -g -DFIRST -c memory.c
 	$(CC) $(LDFLAGS) -o aufg42_first aufg42.o memory.o
 
 .PHONY: clean

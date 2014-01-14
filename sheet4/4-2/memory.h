@@ -2,7 +2,8 @@
 #define _MEMORY_H
 #include <stdio.h>
 
-void memInit(void);
+void memoryInit(void);
+void memoryCleanup(void);
 void *bs_malloc(size_t size);
 void bs_free(void *ptr);
 
