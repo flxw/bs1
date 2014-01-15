@@ -63,12 +63,10 @@ void bs_dump(Node* nodePtr) {
 void *bs_malloc(size_t size) {
     bs_dump(head);
 
-    printf("new request for %d bytes\n", size);
     Node* nodePtr = head;
     while((!nodePtr->free) || (nodePtr->size < size)) {
         nodePtr = nodePtr->next;
         if(nodePtr == NULL) {
-            printf("Not enough space left :(\n");
             errno = ENOMEM;
             return NULL;
         }
@@ -82,14 +80,12 @@ void *bs_malloc(size_t size) {
     // maybe we need to shuffle the next block around
     int sizeDifference = nodePtr->size - size;
     nodePtr->size = size;
-    printf("trimmed block @ %d to size %d\n", nodePtr->startPos, nodePtr->size);
 
     if(sizeDifference > 0) {
         if(nodePtr->next && nodePtr->next->free) {
             // free block, adjust size
             nodePtr->next->startPos = nodePtr->next->startPos - sizeDifference;
             nodePtr->next->size = nodePtr->next->size + sizeDifference;
-            printf("next block @ %d grown to size %d\n", nodePtr->next->startPos, nodePtr->next->size);
         }else{
             // used block, create new free block in between
             Node* newFreeNode = (Node*)malloc(sizeof(Node));
@@ -103,7 +99,6 @@ void *bs_malloc(size_t size) {
                 nodePtr->next->prev = newFreeNode;
             }
             nodePtr->next = newFreeNode;
-            printf("new free block @ %d with size %d\n", newFreeNode->startPos, newFreeNode->size);
         }
     }
 
@@ -114,33 +109,26 @@ void bs_free(void *ptr) {
 
     bs_dump(head);
 
-    printf("request for freeing of data @ %p\n", ptr);
-
     long offset = (long)ptr - (long)mem;
     if(offset < 0 || offset > MEM_SIZE) {
-        printf("that pointer is not inside my data block.\n");
+        printf("that pointer (%p) is not inside my data block.\n", ptr);
         return;
     }
-    printf("... startPos: %d\n", offset);
 
     // find block in chain
     Node* nodePtr = head;
     while(nodePtr->startPos != offset) {
-        printf("block starting @ %d != %d\n", nodePtr->startPos, offset);
         nodePtr = nodePtr->next;
         if(nodePtr == NULL) {
-            printf("ptr is not pointing at a block begin\n");
+            printf("pointer (%p) is not pointing at a block begin\n", ptr);
             return;
         }
     }
 
-    printf("freeing block @ %d with size %d\n", nodePtr->startPos, nodePtr->size);
     nodePtr->free = 1;
 
     // try to concatenate free block afterwards
     if(nodePtr->next && nodePtr->next->free) {
-        printf("concatenating with block @ %d to total size of %d\n", nodePtr->next->startPos, nodePtr->size + nodePtr->next->size);
-
         Node* toBeFreed = nodePtr->next;
 
         if(nodePtr->next->next) {
@@ -155,8 +143,6 @@ void bs_free(void *ptr) {
 
     // try to concatenate free block before
     if(nodePtr->prev && nodePtr->prev->free) {
-        printf("concatenating with block @ %d to total size of %d\n", nodePtr->prev->startPos, nodePtr->size + nodePtr->prev->size);
-
         Node* toBeFreed = nodePtr;
 
         if(nodePtr->next) {
@@ -167,7 +153,6 @@ void bs_free(void *ptr) {
         nodePtr->prev->size = nodePtr->size + nodePtr->prev->size;
 
         free(toBeFreed);
-        
     }
 }
 #endif
