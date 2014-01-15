@@ -22,11 +22,11 @@ int main(int argc, char **argv)
 	ptr2=bs_malloc(964); //964 Bytes
 	if(NULL==ptr2)
 	    perror("964 Bytes");
-    ptr3=bs_malloc(3000); //3000 Bytes
+    ptr3=(char*)bs_malloc(3000); //3000 Bytes
 	if(NULL==ptr3)
 	    perror("3000 Bytes");
     bs_free(ptr1); 
-	ptr3=bs_malloc(3000); //3000 Bytes
+	ptr3=(char*)bs_malloc(3000); //3000 Bytes
 	if(NULL==ptr3)
 	    perror("3000 Bytes");
 	bs_free(ptr2);
