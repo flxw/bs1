@@ -10,23 +10,24 @@
 static char mem[MEM_SIZE];
 
 /* works for both algorithms */
+
+#ifdef BUDDY
+
 typedef struct Node {
     unsigned int startPos;
     unsigned int size;
     char free;
     struct Node* next;
     struct Node* prev;
-
-    /* only needed for buddy algorithm */
     struct Node* childLeft;
     struct Node* childRight;
     struct Node* parent;
 } Node;
 
+// this Node structure is quite heavy and itself > 16 Bytes
+// so we should not give out memory chunks smaller than 16 bytes
 
-#ifdef BUDDY
-
-#define BUDDY_MIN_SIZE 16
+#define BUDDY_MIN_SIZE 32
 
 Node** nodeListArray;
 unsigned int orderCount;
@@ -38,7 +39,7 @@ void bs_dump(void) {
     int i=0;
     Node* nodePtr = NULL;
 
-    for( i=(orderCount-1); i>=0; i--) {
+    for( i=0; i<orderCount; i++) {
         printf("order %d: ", i);
         nodePtr = nodeListArray[i]; 
         while(nodePtr) {
@@ -104,8 +105,6 @@ Node* splitBlockInHalf(Node* nodePtr) {
     
     if(!nodePtr || !nodePtr->free) { return NULL; }
 
-    printf("splitting Block @ %d with size %d...\n", nodePtr->startPos, nodePtr->size);
-
     // determine order
     int order = 0;
     int logReference = BUDDY_MIN_SIZE;
@@ -143,8 +142,6 @@ Node* splitBlockInHalf(Node* nodePtr) {
     nodePtr->childLeft = newPtr;
     nodePtr->childRight = buddyPtr;
 
-    printf("Create blocks @ %d and @ %d with size %d\n", newPtr->startPos, buddyPtr->startPos, newPtr->size);
-
     // mark original block as occupied
     nodePtr->free = 0;
 
@@ -161,7 +158,6 @@ Node* splitBlockInHalf(Node* nodePtr) {
         newPtr->prev = lastNode;
     }
 
-       
     return newPtr;
 }
 
@@ -171,27 +167,25 @@ Node* findFreeBlockOfOrder(int order) {
         return NULL;
     }
 
+    // find a free block
     Node* nodePtr = nodeListArray[order];
     while(nodePtr && !nodePtr->free) {
         nodePtr = nodePtr->next;
     }
 
+    // did we find one in our list?
     if(nodePtr && nodePtr->free) {
-        // yay!
-        printf("found Block of order %d starting @ %d with size %d\n", order, nodePtr->startPos, nodePtr->size);
         return nodePtr;   
     }
 
-    printf("no block of order %d left\n", order);
-    // we need to find a higher order block and split it
+    // otherwise we need to find a higher order block
     nodePtr = findFreeBlockOfOrder(order + 1);
     
     if(nodePtr == NULL) {
-        printf("could not find block of order %d :(\n", order);
         return NULL;
     }
 
-    // we found a block of order + 1
+    // we found a block of order + 1 and need to split it
     nodePtr = splitBlockInHalf(nodePtr);
 
     return nodePtr;
@@ -203,6 +197,7 @@ void *bs_malloc(size_t size) {
 
     printf("request for %d bytes\n", size);
 
+    // determine minimum order
     int order = 0;
     int logReference = BUDDY_MIN_SIZE;
     while(logReference < size) {
@@ -210,12 +205,9 @@ void *bs_malloc(size_t size) {
         order++;
     }
     if(order >= orderCount) {
-        printf("%d >= orderCount (%d)\n", order, orderCount);
         errno = ENOMEM;
         return NULL;
     }
-
-    printf("required: order %d or higher\n", order);
 
     Node* nodePtr = findFreeBlockOfOrder(order);
 
@@ -232,42 +224,41 @@ void *bs_malloc(size_t size) {
 
 void collapseNode(Node* nodePtr) {
 
+    // only collapse this node if we have to children and they are free
     if(!nodePtr) { return; }
     if(!nodePtr->childLeft || !nodePtr->childRight) { return; }
+    if(!nodePtr->childLeft->free || !nodePtr->childRight->free) { return; }
 
-    if(nodePtr->childLeft && nodePtr->childLeft->free && nodePtr->childRight->free) {
-        int order = 0;
-        int logReference = BUDDY_MIN_SIZE;
-        while(logReference < nodePtr->childLeft->size) {
-            logReference *= 2;
-            order++;
-        }            
-        
-        // remove children from list
-        if(nodePtr->childRight->next) {
-            nodePtr->childRight->next->prev = nodePtr->childLeft->prev;
-        }
-        if(nodePtr->childLeft->prev) {
-            nodePtr->childLeft->prev->next = nodePtr->childRight->next;
-        }
-        if(nodeListArray[order] == nodePtr->childLeft) {
-            nodeListArray[order] = nodePtr->childRight->next;
-        }
-
-        printf("collapsing blocks %d - %d and %d - %d\n", nodePtr->childLeft->startPos, nodePtr->childLeft->startPos + nodePtr->childLeft->size, nodePtr->childRight->startPos, nodePtr->childRight->startPos + nodePtr->childRight->size);
-
-        // free children
-        free(nodePtr->childLeft);
-        free(nodePtr->childRight);
-
-        nodePtr->childLeft = NULL;
-        nodePtr->childRight = NULL;
-
-        nodePtr->free = 1;
-
-        // collapse parent if possible
-        collapseNode(nodePtr->parent);
+    // determine order to know which list to edit
+    int order = 0;
+    int logReference = BUDDY_MIN_SIZE;
+    while(logReference < nodePtr->childLeft->size) {
+        logReference *= 2;
+        order++;
+    }            
+    
+    // remove children from list
+    if(nodePtr->childRight->next) {
+        nodePtr->childRight->next->prev = nodePtr->childLeft->prev;
     }
+    if(nodePtr->childLeft->prev) {
+        nodePtr->childLeft->prev->next = nodePtr->childRight->next;
+    }
+    if(nodeListArray[order] == nodePtr->childLeft) {
+        nodeListArray[order] = nodePtr->childRight->next;
+    }
+
+    // free children
+    free(nodePtr->childLeft);
+    free(nodePtr->childRight);
+
+    nodePtr->childLeft = NULL;
+    nodePtr->childRight = NULL;
+
+    nodePtr->free = 1;
+
+    // collapse parent if possible
+    collapseNode(nodePtr->parent);
 }
 
 void bs_free(void *ptr) {
@@ -281,15 +272,11 @@ void bs_free(void *ptr) {
         return;
     }
 
-    printf("... that is @ %d\n", offset);
-
     // binary search
     Node* nodePtr = nodeListArray[orderCount - 1];
 
     while(nodePtr) {
-        printf("  [ %d - %d ]\n", nodePtr->startPos, nodePtr->startPos + nodePtr->size);
         if(nodePtr->startPos == offset && !nodePtr->childLeft) {
-            printf("this pointer belongs to block @ %d with size %d -- freeing that one.\n", nodePtr->startPos, nodePtr->size);
             nodePtr->free = 1;
             if(nodePtr->parent) {
                 collapseNode(nodePtr->parent);
@@ -298,25 +285,30 @@ void bs_free(void *ptr) {
         }
 
         if(!nodePtr->childLeft && nodePtr->startPos != offset) {
-            printf("(block %d - %d) I can't find the Node that this pointer belongs to :(\n", nodePtr->startPos, nodePtr->startPos + nodePtr->size);
             return;
         }
 
         if(nodePtr->childRight->startPos > offset) {
-            printf("->childLeft\n");
             nodePtr = nodePtr->childLeft;
         }else{
-            printf("->childRight\n");
             nodePtr = nodePtr->childRight;
         }
-
     }
-
 }
 #endif 
 
 
 #ifdef FIRST
+
+// diet Node
+typedef struct Node {
+    unsigned int startPos;
+    unsigned int size;
+    char free;
+    struct Node* next;
+    struct Node* prev;
+} Node;
+
 Node* head;
 
 void memoryInit(void) {
@@ -329,7 +321,6 @@ void memoryInit(void) {
 }
 
 void memoryCleanup(void) {
-    printf("cleanup...\n");
     Node* ptr;
     while(head->next != NULL) {
         ptr = head->next;
