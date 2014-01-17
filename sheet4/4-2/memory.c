@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define MEM_SIZE 4096
 
@@ -9,7 +10,7 @@
 /* ... I did =O */
 static char mem[MEM_SIZE];
 
-/* works for both algorithms */
+pthread_mutex_t lock;
 
 #ifdef BUDDY
 
@@ -52,6 +53,10 @@ void bs_dump(void) {
 }
 
 void memoryInit(void) {
+
+    // initialize mutex
+    pthread_mutex_init(&lock, NULL);
+
     // initialize array of lists
     orderCount = 1;
     unsigned int logReference = BUDDY_MIN_SIZE;
@@ -99,6 +104,8 @@ void memoryCleanup(void) {
         }
     }
     free(nodeListArray);
+
+    pthread_mutex_destroy(&lock);
 }
 
 Node* splitBlockInHalf(Node* nodePtr) {
@@ -195,6 +202,7 @@ void *bs_malloc(size_t size) {
 
     bs_dump();
 
+
     printf("request for %d bytes\n", size);
 
     // determine minimum order
@@ -209,14 +217,20 @@ void *bs_malloc(size_t size) {
         return NULL;
     }
 
+    // lock mutex - from here on things may change
+    pthread_mutex_lock(&lock);
+
     Node* nodePtr = findFreeBlockOfOrder(order);
 
     if(!nodePtr) {
+        pthread_mutex_unlock(&lock);
         errno=ENOMEM;
         return NULL;
     }
 
     nodePtr->free = 0;
+
+    pthread_mutex_unlock(&lock);
 
     return (void*)(mem + nodePtr->startPos);
 
@@ -264,11 +278,16 @@ void collapseNode(Node* nodePtr) {
 void bs_free(void *ptr) {
     bs_dump();
 
+    pthread_mutex_lock(&lock);
+
     printf("request to free pointer %p\n", ptr);
 
     long offset = (long)ptr - (long)mem;
     if(offset < 0 || offset > MEM_SIZE) {
         printf("that pointer (%p) is not inside my data block.\n", ptr);
+
+        pthread_mutex_unlock(&lock);
+
         return;
     }
 
@@ -281,10 +300,13 @@ void bs_free(void *ptr) {
             if(nodePtr->parent) {
                 collapseNode(nodePtr->parent);
             }
+
+            pthread_mutex_unlock(&lock);
             return;
         }
 
         if(!nodePtr->childLeft && nodePtr->startPos != offset) {
+            pthread_mutex_unlock(&lock);
             return;
         }
 
@@ -294,6 +316,8 @@ void bs_free(void *ptr) {
             nodePtr = nodePtr->childRight;
         }
     }
+
+    pthread_mutex_unlock(&lock);
 }
 #endif 
 
@@ -312,6 +336,9 @@ typedef struct Node {
 Node* head;
 
 void memoryInit(void) {
+
+    pthread_mutex_init(&lock, NULL);
+
     head = (Node*)malloc(sizeof(Node));
     head->startPos = 0;
     head->size = MEM_SIZE;
@@ -328,6 +355,8 @@ void memoryCleanup(void) {
         free(ptr);
     }
     free(head);
+
+    pthread_mutex_destroy(&lock);
 }
 
 void bs_dump(Node* nodePtr) {
@@ -342,12 +371,15 @@ void bs_dump(Node* nodePtr) {
 void *bs_malloc(size_t size) {
     bs_dump(head);
 
+    pthread_mutex_lock(&lock);
+
     printf("request for %d bytes\n", size);
 
     Node* nodePtr = head;
     while((!nodePtr->free) || (nodePtr->size < size)) {
         nodePtr = nodePtr->next;
         if(nodePtr == NULL) {
+            pthread_mutex_unlock(&lock);
             errno = ENOMEM;
             return NULL;
         }
@@ -383,17 +415,21 @@ void *bs_malloc(size_t size) {
         }
     }
 
+    pthread_mutex_unlock(&lock);
     return returnValue;
 }
 
 void bs_free(void *ptr) {
     bs_dump(head);
 
+    pthread_mutex_lock(&lock);
+
     printf("request to free pointer %p\n", ptr);
 
     long offset = (long)ptr - (long)mem;
     if(offset < 0 || offset > MEM_SIZE) {
         printf("that pointer (%p) is not inside my data block.\n", ptr);
+        pthread_mutex_unlock(&lock);
         return;
     }
 
@@ -403,6 +439,7 @@ void bs_free(void *ptr) {
         nodePtr = nodePtr->next;
         if(nodePtr == NULL) {
             printf("pointer (%p) is not pointing at a block begin\n", ptr);
+            pthread_mutex_unlock(&lock);
             return;
         }
     }
@@ -436,6 +473,8 @@ void bs_free(void *ptr) {
 
         free(toBeFreed);
     }
+    pthread_mutex_unlock(&lock);
+    return;
 }
 #endif
   
