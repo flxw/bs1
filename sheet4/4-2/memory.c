@@ -451,8 +451,8 @@ void bs_unsafe_free(void *ptr) {
             nodePtr->next->next->prev = nodePtr;
         }
 
-        nodePtr->next = nodePtr->next->next;
         nodePtr->size = nodePtr->size + nodePtr->next->size;
+        nodePtr->next = nodePtr->next->next;
 
         free(toBeFreed);
     }
